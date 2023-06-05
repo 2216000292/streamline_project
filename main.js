@@ -673,6 +673,8 @@ form.addEventListener('submit', function(event) {
   var data;
   try {
     data = JSON.parse(formData.get('myInput'));
+    data = avg_each_streamline_neighbor(data);
+    console.log(data);
   } catch (error) {
     alert("Invalid input format, please enter the text as following format:            [{'x': '3', 'y': 21},{'x': '5', 'y': 32}]     ");
   }

@@ -45,3 +45,31 @@ function findMinMax(arr, key) {
   
     return [min, max];
 };
+
+/**
+ * This function is used to calculate the minimum distance from each streamline neighbor and determine the average
+ * The return format should looks like
+    {x: 0, y: 1, c: 0}
+    {x: 1, y: 2, c: 0}
+    {x: 2, y: 3, c: 0}
+    {x: 3, y: 4, c: 0}
+
+ * @param {*} data 
+ * @returns {Array} 
+ */
+function avg_each_streamline_neighbor(data) {
+  const averages = data.map((item, index) => {
+    let total = 0;
+    let count = 0;
+
+    for(let key in item) {
+      const min = Math.min(...item[key]);
+      total += min;
+      count++;
+    }
+
+    return { "x": index, "y": total / count, "c": 0 };
+  });
+
+  return averages;
+}
