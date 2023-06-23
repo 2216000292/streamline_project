@@ -10,7 +10,7 @@
 
   "data": [
     {
-      "name": "Data",
+      "name": "chartData",
       "values": [
       {"x": 0, "y": 28, "c":0}, {"x": 0.5, "y": 20, "c":1},{"x": 3.4, "y": 80, "c":2},
       {"x": 1.1, "y": 43, "c":0}, {"x": 1, "y": 35, "c":1},{"x": 4.7, "y": 30, "c":2},
@@ -23,17 +23,6 @@
       {"x": 8.3, "y": 68, "c":0}, {"x": 4.4, "y": 16, "c":1},
       {"x": 9, "y": 49, "c":0}, {"x": 3.9, "y": 25, "c":1}
     ]
-    }
-    ,
-    {
-      "name": "data_1",
-      "source": "Data",
-      "transform": [{"type": "filter", "expr": "datum.c == 0"}]
-    },
-    {
-      "name": "chartData",
-      "source": "Data",
-      "transform": [{"type": "filter", "expr": "datum.c > 0"}]
     }
   ],
 
@@ -112,12 +101,6 @@
           "type": "ordinal",
           "domain": {"data": "chartData", "field": {"signal": "classification"}, "sort": true},
           "range": "category"
-        },
-        {
-          "name": "strokeDash",
-          "type": "ordinal",
-          "domain": {"data": "data_1", "field": "c"},
-          "range": [[4, 2]]
         }
       ],
       "axes": [
@@ -153,21 +136,6 @@
                   "y": {"scale": "yDetail", "field": {"signal": "yAxis"}}
                 }
               }
-            },
-            {
-               "name": "layer_0_marks",
-                "type": "line",
-                "style": ["line"],
-                "sort": {"field": "datum[\"x\"]"},
-                "from": {"data": "data_1"},
-                "encode": {
-                  "update": {
-                    "stroke": {"value": "#4c78a8"},
-                    "strokeDash": {"scale": "strokeDash", "field": "c"},
-                    "x": {"scale": "xDetail", "field": {"signal": "xAxis"}},
-                    "y": {"scale": "yDetail", "field": {"signal": "yAxis"}}
-                  }
-                }
             }
           ]
         }
@@ -184,7 +152,7 @@
           "symbols": {
             "update": {
               "fill": {"value": "transparent"},
-              "opacity": {"value": 1}
+              "opacity": {"value": 0.7}
             }
           }
         }

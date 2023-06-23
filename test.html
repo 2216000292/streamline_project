@@ -10,50 +10,33 @@
 <div class="container">
   <div class="sidebar" id="sidebar">
 	<form id="my-form" >
-
-        <div id="ember29" class="ace-editor-container ember-view ui-resizable" style="height: 150px;">        
-          <textarea id="ember30" name="myInput" class="ember-text-area ember-view accessible-editor resizable" aria-label="Enter your code here." spellcheck="false"></textarea>
-        </div>
-        <div class="ui-resizable-handle ui-resizable-s" ></div>
       
     
-      <div class="control-graph">
-          <label for="chart-type">Chart type:</label>
-          <select name="chart-type" id="chart-type">
-            <option value="none">None</option>
-            <option value="bar-chart">Bar Chart</option>
-            <option value="line-chart">Line Chart(bug)</option>
-            <option value="line-chart-detailView">Line Chart</option>
-            <option value="scatter-plot-detailView">Scatter Plot</option>
-          </select>
-        
-        <div>
-          <label for="project">Projection</label>
-          <input type="checkbox" id="project" name="project" >
-        </div>
+    <div class="control-graph">
 
-
-      <div class="row" id="color-change" style="display:none;">
-        
-          <div class="column">
-            <label for="color-input" style="display:inline-block;">Chart Color:     </label>
-            <div class="color-box" id="color-box"></div>
-            <input type="color" id="colorPicker-barchart" value="#325296" name="bar-chart-color" style="display:none;">
-          </div>
-          
-        </div>
-
-        <div id="step-change" style="display:none;">
-          <label >Stroke Width:</label>
-          <input type="number" id="stroke-input" name="stroke-input" min="1" max="10">
-        </div>
-
-        <div class="linechart-control-color" id="linechart-control-color" style="display:none;">
+      <div>
+        <label for="dataset"> Select a DataSet:</label>
+        <select name="dataset" id="dataset">
+          <option value="JSON/sl1.json">file1.json</option>
+          <option value="JSON/sl2.json">file2.json</option>
+          <option value="JSON/sl3.json">file3.json</option>
+          <option value="JSON/sep1.json">sep1.json</option>
+        </select>
       </div>
 
-        <div class="button">
-          <button type="submit">Submit</button>
-        </div>
+      <div>
+        <label for="chart-type">Chart type:</label>
+        <select name="chart-type" id="chart-type">
+          <option value="none">None</option>
+          <option value="line-chart-detailView">Line Chart</option>
+          <option value="scatter-plot-detailView">Scatter Plot</option>
+        </select>
+      </div>
+
+
+      <div class="button">
+        <button type="submit">Submit</button>
+      </div>
         
 
       </div>

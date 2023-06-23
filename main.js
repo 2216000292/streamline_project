@@ -10,9 +10,9 @@ const twoChart_resizer = document.querySelector('.twoChart-resizer');
 
 let colors = [
   "red", 
-  "blue", 
-  "teal", 
-  "navy", 
+  "#259bf5", 
+  "#2086d4", 
+  "#165c91", 
   "maroon", 
   "purple", 
   "fuchsia", 
@@ -111,6 +111,8 @@ const divObservers = {};
      * Users can click on the colored circles to open a color picker to change the color of each line. 
      * This function gets called when a line chart is rendered.
      */
+
+
     function controlLineColor(){
       const datasetCount = [...new Set(curr_dataset.map(item => item.c))].length;
       document.getElementById("linechart-control-color").innerHTML = '';   //avoid overlapping with the old content.
@@ -287,7 +289,7 @@ const divObservers = {};
           container: renderedDiv,   // parent DOM container
           hover:     true 
           })
-          .insert("chartData", myData)
+          .insert("Data", myData)
           // return view.runAfter(
           //   console.log(view.signal('xAxis'))
           // )
@@ -402,7 +404,7 @@ const divObservers = {};
           view.signal("height",height);
           view.signal("strokeWidth",curr_strokeWidth);
           view.runAsync();
-          controlLineColor();
+          // controlLineColor();
           
           let existedFilteredData = []; 
           view.addSignalListener("detailDomain", (_, domain) => {
@@ -600,7 +602,7 @@ const divObservers = {};
     }
 
   }
-  contorlSizeOfInputField(inputfield,editor,handle);    
+  
 
 
   //general resizer function, only available use when user resize "height"
@@ -670,72 +672,114 @@ form.addEventListener('submit', function(event) {
   // Do something with the form data, such as sending it to a server
   const formData = new FormData(form);
   
-  var data;
-  try {
-    data = JSON.parse(formData.get('myInput'));
-    data = avg_each_streamline_neighbor(data);
-    console.log(data);
-  } catch (error) {
-    alert("Invalid input format, please enter the text as following format:            [{'x': '3', 'y': 21},{'x': '5', 'y': 32}]     ");
-  }
 
-  curr_dataset = data;
+  // try {
+  //   data = JSON.parse(formData.get('myInput'));
+  //   data = avg_each_streamline_neighbor(data);
+  //   console.log(data);
+  // } catch (error) {
+  //   alert("Invalid input format, please enter the text as following format:            [{'x': '3', 'y': 21},{'x': '5', 'y': 32}]     ");
+  // }
+
+
   const type = formData.get('chart-type');
+  const fileName = formData.get('dataset');
+
+
+
+  fetch(fileName)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("HTTP error " + response.status);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log(data);
+    let filteredData = removeZeroValuesAndEmptyObjects(data);
+    let all_streamlines = findMinimums(filteredData);
+    console.log(all_streamlines);
+
+    curr_dataset = avg_each_streamline_neighbor(filteredData);
+    
+    // let mostFrequentKey1 = findKFrequentKey(filteredData,1); 
+    // let minValues1 = recordMinValues(filteredData, mostFrequentKey1);
+    // let vega_format_array1 = convertToRequiredFormat(minValues1,1);
+    // // console.log(mostFrequentKey,minValues,requiredFormat)
+    
+    // let mostFrequentKey2 = findKFrequentKey(filteredData,2); 
+    // let minValues2 = recordMinValues(filteredData, mostFrequentKey2);
+    // let vega_format_array2 = convertToRequiredFormat(minValues2,2);
+
+    // let mostFrequentKey3 = findKFrequentKey(filteredData,3); 
+    // let minValues3 = recordMinValues(filteredData, mostFrequentKey3);
+    // let vega_format_array3 = convertToRequiredFormat(minValues3,3);
+
+    // result = curr_dataset.concat(vega_format_array1).concat(vega_format_array2).concat(vega_format_array3)
+    // console.log(result)
+    result = curr_dataset.concat(all_streamlines);
+    updateGraph(result,type,"black",false);
+    
+  })
+  .catch(error => {
+    console.error("解析文件出错:", error);
+  });
+
   // const min = formData.get('domain-min');
   // const max = formData.get('domain-max');
   // const color = formData.get('color-input');
-  const stroke = formData.get('stroke-input');
-  curr_strokeWidth = stroke;
-  const color = formData.get("bar-chart-color");
-  const projection = formData.get("project");
-  curr_projection = Boolean(projection);
-  console.log("submit",curr_projection);
-  updateGraph(data,type,color,curr_projection);
+  // const stroke = formData.get('stroke-input');
+  // curr_strokeWidth = stroke;
+  // const color = formData.get("bar-chart-color");
+  // const projection = formData.get("project");
+  // curr_projection = Boolean(projection);
+  // console.log("submit",curr_projection);
+  
   
 });
 
 
-/**
- * Sets up a 'change' event listener for a chart type selector.
- *
- * When the chart type selector's value changes, this listener checks the new value and adjusts
- * the display properties of the bar chart color selector, step selector, and line chart color selector.
- * Different chart types require different selectors to be visible.
- *
- * @listens change - The event that triggers the function.
- * @event
- *
- * @property {HTMLElement} chartTypeSelect - The HTML select element for choosing the chart type.
- * @property {HTMLElement} colorSelect - The HTML element representing the barchart color selector, which is shown or hidden based on the chart type.
- * @property {HTMLElement} stepSelect - The HTML element representing the step selector, which is shown or hidden based on the chart type.
- * @property {HTMLElement} lineChartColorSelect - The HTML element representing the line chart color selector, which is shown or hidden based on the chart type.
- */
-const chartTypeSelect = document.getElementById('chart-type');
-const colorSelect = document.getElementById('color-change');
-const stepSelect = document.getElementById('step-change');
-const lineChartColorSelect = document.getElementById('linechart-control-color');
+// /**
+//  * Sets up a 'change' event listener for a chart type selector.
+//  *
+//  * When the chart type selector's value changes, this listener checks the new value and adjusts
+//  * the display properties of the bar chart color selector, step selector, and line chart color selector.
+//  * Different chart types require different selectors to be visible.
+//  *
+//  * @listens change - The event that triggers the function.
+//  * @event
+//  *
+//  * @property {HTMLElement} chartTypeSelect - The HTML select element for choosing the chart type.
+//  * @property {HTMLElement} colorSelect - The HTML element representing the barchart color selector, which is shown or hidden based on the chart type.
+//  * @property {HTMLElement} stepSelect - The HTML element representing the step selector, which is shown or hidden based on the chart type.
+//  * @property {HTMLElement} lineChartColorSelect - The HTML element representing the line chart color selector, which is shown or hidden based on the chart type.
+//  */
+// const chartTypeSelect = document.getElementById('chart-type');
+// const colorSelect = document.getElementById('color-change');
+// const stepSelect = document.getElementById('step-change');
+// const lineChartColorSelect = document.getElementById('linechart-control-color');
 
-chartTypeSelect.addEventListener('change', function() {
-  const selectedOptionValue = this.value;
+// chartTypeSelect.addEventListener('change', function() {
+//   const selectedOptionValue = this.value;
   
-  if (selectedOptionValue === 'bar-chart') {
-    colorSelect.style.display = "block";      // color seletor for barchart
-    stepSelect.style.display = "none";        // line width for linechart
-    lineChartColorSelect.style.display = "none";    // color seletor for linechart
-  }else if (selectedOptionValue === 'line-chart' || selectedOptionValue === 'line-chart-detailView') {
-    colorSelect.style.display = "none";
-    stepSelect.style.display = "block";
-    lineChartColorSelect.style.display = "block";
-  }else if(selectedOptionValue === 'scatter-plot-detailView'){
-    colorSelect.style.display = "none";
-    stepSelect.style.display = "none";
-    lineChartColorSelect.style.display = "none";
-  }else{
-    colorSelect.style.display = "none";
-    colorSelect.style.display = "none";
-    stepSelect.style.display = "none";
-  }
-});
+//   if (selectedOptionValue === 'bar-chart') {
+//     colorSelect.style.display = "block";      // color seletor for barchart
+//     stepSelect.style.display = "none";        // line width for linechart
+//     lineChartColorSelect.style.display = "none";    // color seletor for linechart
+//   }else if (selectedOptionValue === 'line-chart' || selectedOptionValue === 'line-chart-detailView') {
+//     colorSelect.style.display = "none";
+//     stepSelect.style.display = "block";
+//     lineChartColorSelect.style.display = "block";
+//   }else if(selectedOptionValue === 'scatter-plot-detailView'){
+//     colorSelect.style.display = "none";
+//     stepSelect.style.display = "none";
+//     lineChartColorSelect.style.display = "none";
+//   }else{
+//     colorSelect.style.display = "none";
+//     colorSelect.style.display = "none";
+//     stepSelect.style.display = "none";
+//   }
+// });
 
 
 
