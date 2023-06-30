@@ -209,3 +209,77 @@ function findMinimums(data) {
 
   return result;
 }
+
+
+// function classifyData(data) {
+//   let result = {};
+
+//   for(let i = 0; i < data.length; i++) {
+//       let cValue = data[i].c;
+//       if(!result[cValue]) {
+//           result[cValue] = [];
+//       }
+//       result[cValue].push(data[i]);
+//   }
+
+//   console.log(result);
+//   return result;
+// }
+
+function classifyData(data) {
+  let result = {};
+
+  for(let i = 0; i < data.length; i++) {
+      let cValue = data[i].c;
+      if(!result[cValue]) {
+          result[cValue] = [];
+      }
+      result[cValue].push(data[i]);
+  }
+
+  let keys = Object.keys(result);
+  keys.sort((a, b) => {
+      let minXa = Math.min(...result[a].map(item => item.x));
+      let minXb = Math.min(...result[b].map(item => item.x));
+
+      if (minXa !== minXb) return minXa - minXb;
+
+      return result[a].length - result[b].length;
+  });
+
+  let sortedResult = keys.map(key => [key, result[key]]);
+
+  return sortedResult;
+}
+
+
+
+function findMaxXY(data) {
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for(let i = 0; i < data.length; i++) {
+    if(data[i].x > maxX) {
+      maxX = data[i].x;
+    }
+    if(data[i].y > maxY) {
+      maxY = data[i].y;
+    }
+  }
+
+  console.log([maxX, maxY]);
+  return [maxX, maxY];
+}
+
+
+function calculateDerivative(data) {
+  let derivative = [];
+
+  for (let i = 0; i < data.length - 1; i++) {
+      let dy = data[i + 1].y - data[i].y;
+      let dx = data[i + 1].x - data[i].x;
+      derivative.push({"x": data[i].x, "y": dy/dx, "c": 0});
+  }
+
+  return data.concat(derivative);
+}

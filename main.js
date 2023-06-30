@@ -35,6 +35,8 @@ let curr_dataset = null;
 let view = null;
 let curr_strokeWidth = 3;
 let curr_projection = false;
+let maxX = 0;
+let maxY = 0;
 
 
 const divObservers = {};
@@ -77,8 +79,10 @@ const divObservers = {};
                 // const entry = entries[0];
                 const type = obj.type;
 
-                  var width = div.clientWidth -30 ;
-                  var height = div.clientHeight;
+                  // var width = div.clientWidth -30 ;
+                  // var height = div.clientHeight/8;
+                  var width = div.parentNode.clientWidth -30 ;
+                  var height = div.parentNode.clientWidth/12 ;
                   console.log("Dectet size change:");
                   if (type === "bar-chart") {
                     changeToBarChart(obj.dataset, div.id, width, height);
@@ -89,9 +93,9 @@ const divObservers = {};
                   }else if (type === "scatter-plot-detailView") {
                     changeToScatterPlot(obj.dataset, div.id , width, height);
                     console.log("changeToScatterPlot -- size control",width,height);
-                  }else if (type === "line-chart-detailView") {
-                    changeToLineChart_Detail_View(obj.dataset, div.id , width, height);
-                    console.log("changeToLineChart_Detail_View -- size control",width);
+                  }else if (type === "scatter-plot-detailView-reg") {
+                    changeToScatterPlot_reg(obj.dataset, div.id , width, height*3);
+                    console.log("changeToScatterPlot -- size control",width,height*3);
                   }
               }
             }
@@ -100,8 +104,8 @@ const divObservers = {};
           }
           ,100)
           );
-          divObservers[div.id] = resizeObserver;
-          resizeObserver.observe(div,{ box : 'border-box' });
+          divObservers[div.parentNode.id] = resizeObserver;
+          resizeObserver.observe(div.parentNode,{ box : 'border-box' });
       });
     }
 
@@ -271,14 +275,20 @@ const divObservers = {};
      * @param {number} height Viewable height of an element in pixels, including padding, but not the border, scrollbar or margin.
      */
     function changeToScatterPlot(myData,willRenderDivId,width,height){
-      let renderedDiv;
-      if(willRenderDivId === "main-chart"){
-        renderedDiv = "#main-chart"
-      }else if(willRenderDivId === "projection-chart"){
-        renderedDiv = "#projection-chart"
-      }
+      let symbol = "#";
+      let renderedDiv = symbol.concat(willRenderDivId);
+      console.log(willRenderDivId);
+      // let renderedDiv;
+      // if(willRenderDivId === "main-chart"){
+      //   renderedDiv = "#main-chart"
+      // }else if(willRenderDivId === "projection-chart"){
+      //   renderedDiv = "#projection-chart"
+      // }
+      // else{
+      //   renderedDiv = "#chart0"
+      // }
       
-      fetch('./JSON/scatter_plot.json')
+      fetch('./JSON/single_scatter_plot.json')
       .then(res => res.json())
       .then(spec => render(spec))
       .catch(err => console.error(err));
@@ -300,6 +310,8 @@ const divObservers = {};
           view.signal('yAxis',yscale);
           view.signal("width",width);
           view.signal("height",height);
+          view.signal("maxX",maxX);
+          view.signal("maxY",maxY);
           view.signal("graphSize",[height,width-80]);    //There is bug in json file, i don't know why have to set -30,
           view.signal("classification","c");
           view.runAsync();
@@ -316,6 +328,52 @@ const divObservers = {};
               }
             });
           }
+      }
+    };
+
+    function changeToScatterPlot_reg(myData,willRenderDivId,width,height){
+      let symbol = "#";
+      let renderedDiv = symbol.concat(willRenderDivId);
+      console.log(willRenderDivId);
+      // let renderedDiv;
+      // if(willRenderDivId === "main-chart"){
+      //   renderedDiv = "#main-chart"
+      // }else if(willRenderDivId === "projection-chart"){
+      //   renderedDiv = "#projection-chart"
+      // }
+      // else{
+      //   renderedDiv = "#chart0"
+      // }
+      
+      fetch('./JSON/single_scatter_plot_reg.json')
+      .then(res => res.json())
+      .then(spec => render(spec))
+      .catch(err => console.error(err));
+
+      function render(spec) {
+          view = new vega.View(vega.parse(spec), {
+          renderer:  'svg',  // renderer (canvas or svg)
+          container: renderedDiv,   // parent DOM container
+          hover:     true 
+          })
+          .insert("Data", myData)
+          // return view.runAfter(
+          //   console.log(view.signal('xAxis'))
+          // )
+          let xscale = Object.keys(myData[0])[0];
+          let yscale = Object.keys(myData[0])[1];
+          // let str = xscale.toString();
+          view.signal('xAxis',xscale);
+          view.signal('yAxis',yscale);
+          view.signal("width",width);
+          view.signal("height",height);
+          view.signal("maxX",maxX);
+          view.signal("maxY",maxY);
+          view.signal("graphSize",[height,width-80]);    //There is bug in json file, i don't know why have to set -30,
+          view.signal("classification","c");
+          view.runAsync();
+
+          
       }
     };
 
@@ -434,70 +492,77 @@ const divObservers = {};
       * @param {boolean} projection - Flag indicating whether a projection chart is needed.
       *
      */
-    function updateGraph(dataset,type,color,projection){
+    function updateGraph(allLine,avgLine,type,color,projection){
       const myDiv = document.getElementById('main-chart');
       const projectionCharts = document.getElementById("projection-chart");
       const twoChart_resizer = document.getElementById("twoChart-resizer");
       const content = document.getElementById("content");
       console.log("updateGraph function is called");
 
-      // if(type === "line-chart"){
-      //   console.log("changeToLineChart() is called")
-      //   if(Object.keys(dataset[0]).length !== 3){
-      //     alert("The array format you entered cannot be converted to line chart")
-      //   }else{
-      //     changeToLineChart(dataset,"main-chart",curr_width,curr_height);
+      // if(projection){
+      //   projectionCharts.style.display = "block";
+      //   twoChart_resizer.style.display = "block";
+      //   myDiv.style.height = "10%";                 //这里删除会出现无限渲染的bug
+      //   let willRenderObj = {
+      //     main_chart: {name:"main-chart"  , type: type, dataset: dataset},
+      //     projection_chart: {name:"projection-chart" , type: "line-chart", dataset: dataset}
+      //   };
+      //   graphSizeControl(willRenderObj);
+      //   contorlAdjacentDiv(twoChart_resizer);
+      // }else{
+      //   projectionCharts.style.display = "none";
+      //   twoChart_resizer.style.display = "none";
+      //   let willRenderObj = {
+      //     main_chart: {name:"main-chart"  , type: type, dataset: dataset}
+      //   };
+      //   graphSizeControl(willRenderObj);
+      // }
+      let classifiedData = classifyData(allLine);
+      let mainChart = document.getElementById('main-chart');
+      let willRenderObj = {};
+      // for (let key in classifiedData) {
+      //   let chartName = 'chart' + key;
+      //   let newDiv = document.createElement('div');
+      //   newDiv.id = chartName; 
+      //   mainChart.appendChild(newDiv);
+      //   willRenderObj[chartName] = {
+      //     name: chartName,
+      //     type: type,
+      //     dataset: classifiedData[key]
       //   }
-      // }else if(type === "bar-chart"){
-      //   console.log("changeToBarChart() is called")
-      //   if(Object.keys(dataset[0]).length !== 2){
-      //     alert("The array format you entered cannot be converted to Bar chart")
-      //   }else{
-      //     changeToBarChart(dataset);
-      //   }
-      // }else if(type === "multiple-line-chart"){
-      //   console.log("changeToMultiLineChart() is called")
-      //   if(Object.keys(dataset[0]).length !== 3){
-      //     alert("The array format you entered cannot be converted to multiple line chart")
-      //   }else{
-      //     changeToMultiLineChart(dataset,"#main-chart",curr_width,curr_height);
-      //   }
-        
-      // }else if(type === "area-chart"){
-      //   console.log("AreaChart() is called")
-      //   if(Object.keys(dataset[0]).length <= 2){
-      //     alert("The array format you entered cannot be converted to multiple line chart")
-      //   }else{
-      //     changeToAreaChart();
-      //   }
-        
-      // }else if(type === "multiple-line-chart-two"){
-      //   console.log("multiple-line-chart-two() is called")
-      //   if(Object.keys(dataset[0]).length != 3){
-      //     alert("The array format you entered cannot be converted to multiple line projection chart")
-      //   }else{
-      //     changeToMultiLineProjection(dataset,"#main-chart");
-      //   }
+      //   console.log(classifiedData[key]);
       // }
 
-      if(projection){
-        projectionCharts.style.display = "block";
-        twoChart_resizer.style.display = "block";
-        myDiv.style.height = "10%";                 //这里删除会出现无限渲染的bug
-        let willRenderObj = {
-          main_chart: {name:"main-chart"  , type: type, dataset: dataset},
-          projection_chart: {name:"projection-chart" , type: "line-chart", dataset: dataset}
-        };
-        graphSizeControl(willRenderObj);
-        contorlAdjacentDiv(twoChart_resizer);
-      }else{
-        projectionCharts.style.display = "none";
-        twoChart_resizer.style.display = "none";
-        let willRenderObj = {
-          main_chart: {name:"main-chart"  , type: type, dataset: dataset}
-        };
-        graphSizeControl(willRenderObj);
+      let div = document.getElementById('main-chart'); 
+      while(div.firstChild) {
+          div.removeChild(div.firstChild);
       }
+
+
+      for (let [key,values] of classifiedData) {
+        let chartName = 'chart' + key;
+        let newDiv = document.createElement('div');
+        newDiv.id = chartName; 
+        mainChart.appendChild(newDiv);
+        willRenderObj[chartName] = {
+          name: chartName,
+          type: type,
+          dataset: calculateDerivative(values)
+        }
+        console.log(willRenderObj[chartName]);
+      }
+      // This code is used to plot last chart
+        let lastDiv = document.createElement('div');
+        lastDiv.id = "lastChart";
+        mainChart.append(lastDiv);
+        willRenderObj["lastChart"] = {
+          name: "lastChart",
+          type: "scatter-plot-detailView-reg",
+          dataset: allLine.concat(avgLine)
+        }
+
+      // console.log("WILLRENDEROBJ",willRenderObj);
+      graphSizeControl(willRenderObj);
 
       if(color != ""){
         curr_color = color;
@@ -663,7 +728,6 @@ const divObservers = {};
  * @property {string} type - The type of chart to be generated.
  * @property {string} stroke - The stroke input from the form.
  * @property {string} color - The color input for the bar chart from the form.
- * @property {boolean} projection - The projection status, converted to boolean.
  */
 const form = document.querySelector('#my-form');
 form.addEventListener('submit', function(event) {
@@ -672,15 +736,6 @@ form.addEventListener('submit', function(event) {
   // Do something with the form data, such as sending it to a server
   const formData = new FormData(form);
   
-
-  // try {
-  //   data = JSON.parse(formData.get('myInput'));
-  //   data = avg_each_streamline_neighbor(data);
-  //   console.log(data);
-  // } catch (error) {
-  //   alert("Invalid input format, please enter the text as following format:            [{'x': '3', 'y': 21},{'x': '5', 'y': 32}]     ");
-  // }
-
 
   const type = formData.get('chart-type');
   const fileName = formData.get('dataset');
@@ -695,30 +750,15 @@ form.addEventListener('submit', function(event) {
     return response.json();
   })
   .then(data => {
-    console.log(data);
     let filteredData = removeZeroValuesAndEmptyObjects(data);
-    let all_streamlines = findMinimums(filteredData);
-    console.log(all_streamlines);
 
-    curr_dataset = avg_each_streamline_neighbor(filteredData);
-    
-    // let mostFrequentKey1 = findKFrequentKey(filteredData,1); 
-    // let minValues1 = recordMinValues(filteredData, mostFrequentKey1);
-    // let vega_format_array1 = convertToRequiredFormat(minValues1,1);
-    // // console.log(mostFrequentKey,minValues,requiredFormat)
-    
-    // let mostFrequentKey2 = findKFrequentKey(filteredData,2); 
-    // let minValues2 = recordMinValues(filteredData, mostFrequentKey2);
-    // let vega_format_array2 = convertToRequiredFormat(minValues2,2);
+    let allLine = findMinimums(filteredData);
 
-    // let mostFrequentKey3 = findKFrequentKey(filteredData,3); 
-    // let minValues3 = recordMinValues(filteredData, mostFrequentKey3);
-    // let vega_format_array3 = convertToRequiredFormat(minValues3,3);
 
-    // result = curr_dataset.concat(vega_format_array1).concat(vega_format_array2).concat(vega_format_array3)
-    // console.log(result)
-    result = curr_dataset.concat(all_streamlines);
-    updateGraph(result,type,"black",false);
+    [maxX, maxY] = findMaxXY(allLine);
+
+    let avgLine = avg_each_streamline_neighbor(filteredData);// This data excludes avg line.
+    updateGraph(allLine,avgLine,type,"black",false);
     
   })
   .catch(error => {
