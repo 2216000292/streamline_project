@@ -35,9 +35,11 @@ let curr_dataset = null;
 let view = null;
 let curr_strokeWidth = 3;
 let curr_projection = false;
+let minX = 0;
 let maxX = 0;
+let minY = 0;
 let maxY = 0;
-
+let global_renderObj = {}
 
 const divObservers = {};
 
@@ -60,8 +62,8 @@ const divObservers = {};
      * @param {object} willRenderObj Parameter format{ main_chart: {name:"main-chart",type: bar-chart, dataset: []}
         }
      */
-    function graphSizeControl(willRenderObj) {
-
+    function graphSizeControl() {
+      let willRenderObj = global_renderObj;
       Object.values(willRenderObj).forEach(obj => {
         const div = document.getElementById(obj.name);
         if (divObservers.hasOwnProperty(div.id)) {
@@ -81,8 +83,9 @@ const divObservers = {};
 
                   // var width = div.clientWidth -30 ;
                   // var height = div.clientHeight/8;
-                  var width = div.parentNode.clientWidth -30 ;
-                  var height = div.parentNode.clientWidth/12 ;
+                  var width = div.parentNode.parentNode.clientWidth -30 ;
+                  // var height = div.parentNode.clientWidth/12 ;
+                  var height = 100;
                   console.log("Dectet size change:");
                   if (type === "bar-chart") {
                     changeToBarChart(obj.dataset, div.id, width, height);
@@ -310,6 +313,8 @@ const divObservers = {};
           view.signal('yAxis',yscale);
           view.signal("width",width);
           view.signal("height",height);
+          view.signal("minX",minX);
+          view.signal("minY",minY);
           view.signal("maxX",maxX);
           view.signal("maxY",maxY);
           view.signal("graphSize",[height,width-80]);    //There is bug in json file, i don't know why have to set -30,
@@ -367,6 +372,8 @@ const divObservers = {};
           view.signal('yAxis',yscale);
           view.signal("width",width);
           view.signal("height",height);
+          view.signal("minX",minX);
+          view.signal("minY",minY);
           view.signal("maxX",maxX);
           view.signal("maxY",maxY);
           view.signal("graphSize",[height,width-80]);    //There is bug in json file, i don't know why have to set -30,
@@ -479,6 +486,29 @@ const divObservers = {};
       }
     }
 
+    function monitorCheckboxes(hashTable) {
+      for (let key in hashTable) {
+        if (/^chart\d+$/.test(key)) {  // 只处理键名格式为 'chart' + 数字的键
+          let chartNumber = key.slice(5);  // 把 'chart' 剔除，只保留数字部分
+          let checkbox = document.getElementById('checkbox' + chartNumber);
+    
+          checkbox.addEventListener('change', function() {
+            if (this.checked) {
+              hashTable[key].show = true;
+            } else {
+              hashTable[key].show = false;
+            }
+            console.log(`Updated 'show' value for ${key}: ${hashTable[key].show}`);
+            //明天要做的事：： 把golbal传入计算平均值函数，并且创建新数组包含新平均值和show=true的数据，把这个新数组掺入lastchart，更新global.然后调用graphsizecontrol.
+            global_renderObj["lastChart"].dataset = calculateAverageLine(global_renderObj);
+            graphSizeControl();
+          });
+        }
+      }
+    }
+    
+    
+
     /**
      * This function is responsible for retrieving the user's input data and preferences from the form, parsing the input data, 
      * and updating the current dataset and visualization options accordingly. 
@@ -492,32 +522,24 @@ const divObservers = {};
       * @param {boolean} projection - Flag indicating whether a projection chart is needed.
       *
      */
-    function updateGraph(allLine,avgLine,type,color,projection){
+    function updateGraph(allLine,classifyData_allLine,classify_deri_allLine,avgLine,type,color,derivative){
       const myDiv = document.getElementById('main-chart');
       const projectionCharts = document.getElementById("projection-chart");
       const twoChart_resizer = document.getElementById("twoChart-resizer");
       const content = document.getElementById("content");
       console.log("updateGraph function is called");
 
-      // if(projection){
-      //   projectionCharts.style.display = "block";
-      //   twoChart_resizer.style.display = "block";
-      //   myDiv.style.height = "10%";                 //这里删除会出现无限渲染的bug
-      //   let willRenderObj = {
-      //     main_chart: {name:"main-chart"  , type: type, dataset: dataset},
-      //     projection_chart: {name:"projection-chart" , type: "line-chart", dataset: dataset}
-      //   };
-      //   graphSizeControl(willRenderObj);
-      //   contorlAdjacentDiv(twoChart_resizer);
-      // }else{
-      //   projectionCharts.style.display = "none";
-      //   twoChart_resizer.style.display = "none";
-      //   let willRenderObj = {
-      //     main_chart: {name:"main-chart"  , type: type, dataset: dataset}
-      //   };
-      //   graphSizeControl(willRenderObj);
-      // }
-      let classifiedData = classifyData(allLine);
+      let classifiedData;
+      let lastChartData;
+      if(derivative){
+        classifiedData = classify_deri_allLine;
+        lastChartData = calulateAverage(classifiedData);
+      }else{
+        classifiedData = classifyData_allLine;
+        lastChartData = allLine.concat(avgLine);
+      }
+
+
       let mainChart = document.getElementById('main-chart');
       let willRenderObj = {};
       // for (let key in classifiedData) {
@@ -538,19 +560,35 @@ const divObservers = {};
           div.removeChild(div.firstChild);
       }
 
-
       for (let [key,values] of classifiedData) {
         let chartName = 'chart' + key;
         let newDiv = document.createElement('div');
-        newDiv.id = chartName; 
-        mainChart.appendChild(newDiv);
+        newDiv.id = chartName;
+      
+        // 创建新的 checkbox
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'checkbox' + key;
+        checkbox.checked = true;
+      
+        // 创建一个新的父 div，用于包含图表和 checkbox
+        let parentDiv = document.createElement('div');
+        parentDiv.classList.add('chart-container');
+      
+        parentDiv.appendChild(newDiv);
+        parentDiv.appendChild(checkbox);
+      
+        mainChart.appendChild(parentDiv);
+      
         willRenderObj[chartName] = {
           name: chartName,
           type: type,
-          dataset: calculateDerivative(values)
+          dataset: values,
+          show: true
         }
-        console.log(willRenderObj[chartName]);
+        // console.log(willRenderObj[chartName]);
       }
+      
       // This code is used to plot last chart
         let lastDiv = document.createElement('div');
         lastDiv.id = "lastChart";
@@ -558,16 +596,20 @@ const divObservers = {};
         willRenderObj["lastChart"] = {
           name: "lastChart",
           type: "scatter-plot-detailView-reg",
-          dataset: allLine.concat(avgLine)
+          dataset: lastChartData,
+          show: false
         }
 
-      // console.log("WILLRENDEROBJ",willRenderObj);
-      graphSizeControl(willRenderObj);
-
+      console.log("WILLRENDEROBJ",willRenderObj);
+      global_renderObj = willRenderObj;
+      // console.log("计算平均值数据：",calculateAverageLine(global_renderObj));
+      graphSizeControl();
+      monitorCheckboxes(global_renderObj);
+      
+      
       if(color != ""){
         curr_color = color;
       }
-      
       
     };
 
@@ -735,10 +777,10 @@ form.addEventListener('submit', function(event) {
   
   // Do something with the form data, such as sending it to a server
   const formData = new FormData(form);
-  
-
   const type = formData.get('chart-type');
   const fileName = formData.get('dataset');
+  // const derivative = formData.get('derivativeCheckbox') === 'on' ? true : false;
+  // console.log(derivative);
 
 
 
@@ -753,12 +795,27 @@ form.addEventListener('submit', function(event) {
     let filteredData = removeZeroValuesAndEmptyObjects(data);
 
     let allLine = findMinimums(filteredData);
+    let classifyData_allLine = classifyData(allLine);
+    let classify_deri_allLine = calculateDerivatives(classifyData_allLine);
+
+    // [minX,maxX,minY,maxY] = findMaxXY(allLine);
+
+    const derivative = document.getElementById('derivativeCheckbox').checked;
+    if(!derivative){
+      [minX,maxX,minY,maxY] = findMinMax(allLine);
+    }else{
+      [minX,maxX,minY,maxY] = calculateExtremeValues(classify_deri_allLine);
+    }
+
+    // [minX,maxX,minY,maxY] = findMinMax(allLine);
+    // [minX,maxX,minY,maxY] = calculateExtremeValues(classify_deri_allLine);
 
 
-    [maxX, maxY] = findMaxXY(allLine);
+    console.log([minX,maxX,minY,maxY]);
 
-    let avgLine = avg_each_streamline_neighbor(filteredData);// This data excludes avg line.
-    updateGraph(allLine,avgLine,type,"black",false);
+    let avgLine = avg_each_streamline_neighbor(filteredData);
+    console.log("所有线",allLine);
+    updateGraph(allLine,classifyData_allLine,classify_deri_allLine,avgLine,type,"black",derivative);
     
   })
   .catch(error => {

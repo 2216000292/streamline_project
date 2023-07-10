@@ -23,6 +23,13 @@
       {"x": 8.3, "y": 68, "c":0}, {"x": 4.4, "y": 16, "c":1},
       {"x": 9, "y": 49, "c":0}, {"x": 3.9, "y": 25, "c":1}
     ]
+    },
+    {
+      "name": "zeroLine",
+      "values": [
+        {"x": 0, "y": 0},
+        {"x": 500, "y": 0}
+      ]
     }
     ,
     {
@@ -47,7 +54,7 @@
     },
     {
       "name": "graphSize",
-      "value": [60,690]
+      "value": [160,690]
     },
     {
       "name": "xAxis",
@@ -61,6 +68,14 @@
     {
      "name": "classification",
      "value" : "c"
+    },
+    {
+      "name": "minX",
+      "value" : 100
+    },
+    {
+      "name": "minY",
+      "value" : 100
     },
     {
       "name": "maxX",
@@ -87,13 +102,13 @@
           "name": "xDetail",
           "type": "linear",
           "range": [0,{"signal": "graphSize[1]"}],
-          "domain": [0,{"signal": "maxX"}]
+          "domain": [{"signal": "minX"},{"signal": "maxX"}]
         },
         {
           "name": "yDetail",
           "type": "linear",
           "range": [{"signal": "graphSize[0]*0.76"}, 0],
-          "domain": [0,{"signal": "maxY"}],
+          "domain": [{"signal": "minY"},{"signal": "maxY"}],
           "nice": true, "zero": true
         },           
         {
@@ -110,7 +125,6 @@
         }
       ],
       "axes": [
-        {"orient": "bottom", "scale": "xDetail"},
         {"orient": "left", "scale": "yDetail"}
       ],
       "marks": [
@@ -157,6 +171,18 @@
                     "y": {"scale": "yDetail", "field": {"signal": "yAxis"}}
                   }
                 }
+            },
+            {
+              "type": "line",
+              "from": {"data": "zeroLine"},
+              "encode": {
+                "update": {
+                  "stroke": {"value": "black"},
+                  "strokeWidth": {"value" : 0.5},
+                  "x": {"scale": "xDetail", "field": "x"},
+                  "y": {"scale": "yDetail", "field": "y"}
+                }
+              }
             }
           ]
         }

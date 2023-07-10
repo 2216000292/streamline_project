@@ -30,21 +30,57 @@ function arraysAreEqual(arr1, arr2) {
     return true;
 };
 
-function findMinMax(arr, key) {
-    let min = arr[0][key];
-    let max = arr[0][key];
+// function findMinMax(arr, key) {
+//     let min = arr[0][key];
+//     let max = arr[0][key];
   
-    for (const obj of arr) {
-      if (obj[key] < min) {
-        min = obj[key];
-      }
-      if (obj[key] > max) {
-        max = obj[key];
-      }
+//     for (const obj of arr) {
+//       if (obj[key] < min) {
+//         min = obj[key];
+//       }
+//       if (obj[key] > max) {
+//         max = obj[key];
+//       }
+//     }
+  
+//     return [min, max];
+// };
+
+function findMinMax(arr) {
+  let minX = arr[0].x, minY = arr[0].y;
+  let maxX = arr[0].x, maxY = arr[0].y;
+
+  for (const obj of arr) {
+    if (obj.x < minX) {
+      minX = obj.x;
     }
-  
-    return [min, max];
+    if (obj.x > maxX) {
+      maxX = obj.x;
+    }
+    if (obj.y < minY) {
+      minY = obj.y;
+    }
+    if (obj.y > maxY) {
+      maxY = obj.y;
+    }
+  }
+
+  return [
+    minX,
+    maxX,
+    minY,
+    maxY,
+  ];
 };
+
+function calculateExtremeValues(data) {
+  let flattenedData = data.reduce((acc, cur) => acc.concat(cur[1]), []);
+
+  let extremes = findMinMax(flattenedData);
+
+  return extremes;
+}
+
 
 // function removeLeastFrequentKeysAndZeroValues(data) {
 //   // Object to hold the frequency count of each key
@@ -266,20 +302,187 @@ function findMaxXY(data) {
       maxY = data[i].y;
     }
   }
-
-  console.log([maxX, maxY]);
   return [maxX, maxY];
 }
 
 
-function calculateDerivative(data) {
-  let derivative = [];
+// function calculateDerivative(data) {
+//   let derivative = [];
 
-  for (let i = 0; i < data.length - 1; i++) {
-      let dy = data[i + 1].y - data[i].y;
-      let dx = data[i + 1].x - data[i].x;
-      derivative.push({"x": data[i].x, "y": dy/dx, "c": 0});
+//   for (let i = 0; i < data.length - 1; i++) {
+//       let dy = data[i + 1].y - data[i].y;
+//       let dx = data[i + 1].x - data[i].x;
+//       derivative.push({"x": data[i].x, "y": dy/dx, "c": 0});
+//   }
+
+//   return data.concat(derivative);
+// }
+
+function calculateDerivatives(data) {
+  return data.map(([key, values]) => {
+    let derivatives = values.slice(0, -1).map((val, index, array) => {
+      let slope = (values[index + 1].y - val.y) / (values[index + 1].x - val.x);
+      return {
+        x: val.x,
+        y: slope,
+        c: val.c
+      };
+    });
+
+    return [key, derivatives];
+  });
+}
+
+
+//This function takes hashmap as paramter
+// function calculateAverageLine(hashTable) {
+//   let values = {};
+
+//   // 遍历哈希表
+//   for (let key in hashTable) {
+//     if (hashTable[key].show) {  // 只处理 show 为 true 的图表
+//       let dataset = hashTable[key].dataset;
+
+//       // 收集所有数据点的 x 和 y 值
+//       for (let i = 0; i < dataset.length; i++) {
+//         let point = dataset[i];
+//         let x = point.x;
+//         let y = point.y;
+
+//         if (values[x]) {
+//           values[x].total += y;
+//           values[x].count++;
+//         } else {
+//           values[x] = {
+//             total: y,
+//             count: 1
+//           };
+//         }
+//       }
+//     }
+//   }
+
+//   // 计算每个 x 值对应的 y 值的平均数，并创建新的数据集
+//   let averageLine = [];
+//   for (let x in values) {
+//     averageLine.push({
+//       x: parseInt(x),
+//       y: values[x].total / values[x].count,
+//       c: 0
+//     });
+//   }
+
+//   // 按 x 值排序新的数据集
+//   averageLine.sort((a, b) => a.x - b.x);
+
+//   return averageLine;
+// }
+
+
+function calculateAverageLine(hashTable) {
+  let values = {};
+  let dataArrays = [];
+
+  // 遍历哈希表
+  for (let key in hashTable) {
+    if (hashTable[key].show) {  // 只处理 show 为 true 的图表
+      let dataset = hashTable[key].dataset;
+      dataArrays.push(dataset);  // 添加到 dataArrays
+
+      // 收集所有数据点的 x 和 y 值
+      for (let i = 0; i < dataset.length; i++) {
+        let point = dataset[i];
+        let x = point.x;
+        let y = point.y;
+
+        if (values[x]) {
+          values[x].total += y;
+          values[x].count++;
+        } else {
+          values[x] = {
+            total: y,
+            count: 1
+          };
+        }
+      }
+    }
   }
 
-  return data.concat(derivative);
+  // 计算每个 x 值对应的 y 值的平均数，并创建新的数据集
+  let averageLine = [];
+  for (let x in values) {
+    averageLine.push({
+      x: parseInt(x),
+      y: values[x].total / values[x].count,
+      c: 0
+    });
+  }
+
+  // 按 x 值排序新的数据集
+  averageLine.sort((a, b) => a.x - b.x);
+
+  // 添加新的平均线数据集到 dataArrays
+  dataArrays.push(averageLine);
+
+  // 使用 concat 方法合并所有数组
+  let combinedData = [].concat(...dataArrays);
+
+  // 返回合并后的数据
+  return combinedData;
 }
+
+
+function flattenData(data) {
+  let result = [];
+
+  for (let [_, values] of data) {
+    result = result.concat(values);
+  }
+
+  return result;
+}
+
+//parameter should looks like this [
+//  ['3', [{x: 0, y: 0.16438235560424355, c: 2}, {x: 1, y: 0.1689473088493283, c: 2}, /* more objects */]],
+//  ['2', [{x: 0, y: 0.23553560424355, c: 3}, {x: 1, y: 0.198573088493283, c: 3}, /* more objects */]],
+  // ...
+
+function calulateAverage(data) {
+  let sumMap = new Map();
+  let countMap = new Map();
+  
+  // Traverse through data and calculate sum and count
+  for (let [_, values] of data) {
+    for (let point of values) {
+      if (sumMap.has(point.x)) {
+        sumMap.set(point.x, sumMap.get(point.x) + point.y);
+        countMap.set(point.x, countMap.get(point.x) + 1);
+      } else {
+        sumMap.set(point.x, point.y);
+        countMap.set(point.x, 1);
+      }
+    }
+  }
+
+  // Calculate average points
+  let averageData = [];
+  for (let [key, value] of sumMap) {
+    averageData.push({
+      x: key,
+      y: value / countMap.get(key),
+      c: 0
+    });
+  }
+  averageData.sort((a, b) => a.x - b.x);
+
+  // Append original data and average data
+  let result = [];
+  for (let [_, values] of data) {
+    result = result.concat(values);
+  }
+  result = result.concat(averageData);
+
+  return result;
+}
+
+

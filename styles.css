@@ -269,6 +269,12 @@ textarea {
   flex-direction: column;
 }
 
+.chart-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .projection-chart{
  
   height: 50%;
