@@ -561,6 +561,7 @@ const divObservers = {};
       }
 
       for (let [key,values] of classifiedData) {
+        console.log("sdsafsafsafasfsa",values);
         let chartName = 'chart' + key;
         let newDiv = document.createElement('div');
         newDiv.id = chartName;
