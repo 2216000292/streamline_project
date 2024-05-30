@@ -785,7 +785,7 @@ const divObservers = {};
  * @property {string} color - The color input for the bar chart from the form.
  */
 
-document.getElementById('dataset').value = datasetString;
+document.getElementById('ember30').value = datasetString;
 const form = document.querySelector('#my-form');
 form.addEventListener('submit', function(event) {
   event.preventDefault(); // prevent the default form submission behavior
